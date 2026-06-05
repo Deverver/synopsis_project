@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private MoveData idleMove;
 
     [Header("Combat Components")]
-    [SerializeField] private Hitbox hitbox;
+    [SerializeField] private Weapon equippedWeapon;
     [SerializeField] private Hurtbox hurtbox;
     [SerializeField] private Animator animator;
 
@@ -18,7 +18,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         InputBuffer = new InputBuffer();
-        if (hitbox == null) hitbox = GetComponentInChildren<Hitbox>();
+        if (equippedWeapon == null) equippedWeapon = GetComponentInChildren<Weapon>();
         if (hurtbox == null) hurtbox = GetComponentInChildren<Hurtbox>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
     }
@@ -45,41 +45,39 @@ public class PlayerController : MonoBehaviour
 
     private void ReadInput()
     {
-        bool attackPressed = false;
+        InputType currentInput = InputType.None;
 
-        // Support new Input System
-        if (Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame))
+        if (Mouse.current != null)
         {
-            attackPressed = true;
+            if (Mouse.current.leftButton.wasPressedThisFrame) currentInput |= InputType.LightAttack;
+            if (Mouse.current.rightButton.wasPressedThisFrame) currentInput |= InputType.HeavyAttack;
         }
-        else if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        else
         {
-            attackPressed = true;
-        }
-        else if (Gamepad.current != null && (Gamepad.current.buttonWest.wasPressedThisFrame || Gamepad.current.buttonSouth.wasPressedThisFrame))
-        {
-            attackPressed = true;
-        }
-
-        // This is a fix: should allow support for the old input system.
-        if (!attackPressed)
-        {
+            // Fallback for old input system
             try
             {
-                if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0))
-                {
-                    attackPressed = true;
-                }
+                if (Input.GetMouseButtonDown(0)) currentInput |= InputType.LightAttack;
+                if (Input.GetMouseButtonDown(1)) currentInput |= InputType.HeavyAttack;
             }
-            catch
-            {
-                // This is purely for stopping console spam, by ignoring exceptions form the old input manager.
-            }
+            catch { }
         }
 
-        if (attackPressed)
+        if (Keyboard.current != null)
         {
-            InputBuffer.AddInput(InputType.Attack);
+            if (Keyboard.current.jKey.wasPressedThisFrame) currentInput |= InputType.LightAttack;
+            if (Keyboard.current.kKey.wasPressedThisFrame) currentInput |= InputType.HeavyAttack;
+        }
+
+        if (Gamepad.current != null)
+        {
+            if (Gamepad.current.buttonWest.wasPressedThisFrame) currentInput |= InputType.LightAttack;
+            if (Gamepad.current.buttonNorth.wasPressedThisFrame) currentInput |= InputType.HeavyAttack;
+        }
+
+        if (currentInput != InputType.None)
+        {
+            InputBuffer.AddInput(currentInput);
         }
     }
 
@@ -96,9 +94,9 @@ public class PlayerController : MonoBehaviour
             {
                 hurtbox.SetHurtState(currentWindow.hurtState);
             }
-            if (hitbox != null)
+            if (equippedWeapon != null && equippedWeapon.hitbox != null)
             {
-                hitbox.SetHitboxActive(currentWindow.hitboxActive);
+                equippedWeapon.hitbox.SetHitboxActive(currentWindow.hitboxActive);
             }
         }
         else
@@ -108,9 +106,9 @@ public class PlayerController : MonoBehaviour
             {
                 hurtbox.SetHurtState(HurtState.Vulnerable);
             }
-            if (hitbox != null)
+            if (equippedWeapon != null && equippedWeapon.hitbox != null)
             {
-                hitbox.SetHitboxActive(false);
+                equippedWeapon.hitbox.SetHitboxActive(false);
             }
         }
     }

@@ -24,27 +24,25 @@ public class InputBuffer
         buffer.RemoveAll(item => curTime - item.Timestamp > BUFFER_DURATION);
     }
 
-    public bool HasInput(InputType input)
+    public bool HasInput(InputType requiredInput)
     {
         Update();
+        InputType accumulatedInput = InputType.None;
         foreach (var item in buffer)
         {
-            if (item.Input == input)
-            {
-                return true;
-            }
+            accumulatedInput |= item.Input;
         }
-        return false;
+        
+        return (accumulatedInput & requiredInput) == requiredInput;
     }
 
     public void ConsumeInput(InputType input)
     {
-        for (int i = 0; i < buffer.Count; i++)
+        for (int i = buffer.Count - 1; i >= 0; i--)
         {
-            if (buffer[i].Input == input)
+            if ((buffer[i].Input & input) != InputType.None)
             {
                 buffer.RemoveAt(i);
-                break;
             }
         }
     }

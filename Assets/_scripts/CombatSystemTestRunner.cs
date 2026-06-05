@@ -48,16 +48,16 @@ public class CombatSystemTestRunner : MonoBehaviour
             yield break;
         }
 
-        // Scenario 2: Trigger Attack1
-        Debug.Log("[TestRunner] Simulating Attack input...");
-        player.InputBuffer.AddInput(InputType.Attack);
+        // Scenario 2: Trigger LightAttack
+        Debug.Log("[TestRunner] Simulating LightAttack input...");
+        player.InputBuffer.AddInput(InputType.LightAttack);
         
-        // Wait a frame for input buffer to process in Update and transition to Attack1
+        // Wait a frame for input buffer to process in Update and transition to LightSlash1
         yield return null;
         Debug.Log($"[TestRunner] Post-Attack Input: Move={player.StateMachine.CurrentState.Move.moveName}");
-        if (player.StateMachine.CurrentState.Move.moveName != "Attack1")
+        if (player.StateMachine.CurrentState.Move.moveName != "LightSlash1")
         {
-            Debug.LogError("[TestRunner] FAILED: Did not transition to Attack1!");
+            Debug.LogError("[TestRunner] FAILED: Did not transition to LightSlash1!");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -66,8 +66,8 @@ public class CombatSystemTestRunner : MonoBehaviour
             yield break;
         }
 
-        // Scenario 3: Verify Hitbox is inactive before active frame window (before 0.3 * 1.5s = 0.45s)
-        yield return new WaitForSeconds(0.2f);
+        // Scenario 3: Verify Hitbox is inactive before active frame window (before 0.2 normalized, duration 0.8s = 0.16s)
+        yield return new WaitForSeconds(0.1f);
         bool hitboxActiveBefore = player.StateMachine.CurrentState.GetCurrentFrameWindow() != null && player.StateMachine.CurrentState.GetCurrentFrameWindow().hitboxActive;
         Debug.Log($"[TestRunner] Time={player.StateMachine.CurrentState.ElapsedTime:F2}s, NormalizedTime={player.StateMachine.CurrentState.NormalizedTime:F2}: HitboxActive={hitboxActiveBefore}");
         if (hitboxActiveBefore)
@@ -81,9 +81,8 @@ public class CombatSystemTestRunner : MonoBehaviour
             yield break;
         }
 
-        // Scenario 4: Verify Hitbox is active during frame window (0.3 to 0.5, i.e., 0.45s to 0.75s)
-        // Let's wait until elapsedTime is ~0.6s
-        while (player.StateMachine.CurrentState.ElapsedTime < 0.6f)
+        // Scenario 4: Verify Hitbox is active during frame window (0.21 to 0.40, duration 0.8s => 0.17s to 0.32s)
+        while (player.StateMachine.CurrentState.ElapsedTime < 0.25f)
         {
             yield return null;
         }
@@ -91,7 +90,7 @@ public class CombatSystemTestRunner : MonoBehaviour
         Debug.Log($"[TestRunner] Time={player.StateMachine.CurrentState.ElapsedTime:F2}s, NormalizedTime={player.StateMachine.CurrentState.NormalizedTime:F2}: HitboxActive={hitboxActiveDuring}");
         if (!hitboxActiveDuring)
         {
-            Debug.LogError("[TestRunner] FAILED: Hitbox not active during window [0.3 - 0.5]!");
+            Debug.LogError("[TestRunner] FAILED: Hitbox not active during window [0.21 - 0.40]!");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -100,19 +99,20 @@ public class CombatSystemTestRunner : MonoBehaviour
             yield break;
         }
 
-        // Scenario 5: Simulate Attack input within the active transition window (0.3 to 0.7, i.e., 0.45s to 1.05s)
-        // elapsedTime is 0.6s, which is 0.4 normalized time (valid transition window).
-        Debug.Log("[TestRunner] Simulating second Attack input for combo transition...");
-        player.InputBuffer.AddInput(InputType.Attack);
+        // Scenario 5: Simulate HeavyAttack input within the combo transition window (0.41 to 0.80 => >0.33s)
+        while (player.StateMachine.CurrentState.ElapsedTime < 0.45f)
+        {
+            yield return null;
+        }
+        Debug.Log("[TestRunner] Simulating HeavyAttack input for combo transition...");
+        player.InputBuffer.AddInput(InputType.HeavyAttack);
 
-        // Scenario 6: Verify transition to Attack2 occurs
-        // The transition is checked in StateMachine.Update.
-        // Wait a frame for transition to be processed.
+        // Scenario 6: Verify transition to HeavySlash1 occurs
         yield return null;
         Debug.Log($"[TestRunner] Post-Combo Input: Move={player.StateMachine.CurrentState.Move.moveName}");
-        if (player.StateMachine.CurrentState.Move.moveName != "Attack2")
+        if (player.StateMachine.CurrentState.Move.moveName != "HeavySlash1")
         {
-            Debug.LogError("[TestRunner] FAILED: Did not transition to Attack2 on combo input!");
+            Debug.LogError("[TestRunner] FAILED: Did not transition to HeavySlash1 on combo input!");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -121,14 +121,14 @@ public class CombatSystemTestRunner : MonoBehaviour
             yield break;
         }
 
-        // Scenario 7: Verify HurtState in Attack2 starts as Invincible (window 0.0 to 0.4)
-        yield return new WaitForSeconds(0.2f);
+        // Scenario 7: Verify HurtState in HeavySlash1 starts as Invincible (window 0.0 to 0.5)
+        yield return new WaitForSeconds(0.1f);
         var currentWindow = player.StateMachine.CurrentState.GetCurrentFrameWindow();
         HurtState hurtStateBefore = currentWindow != null ? currentWindow.hurtState : HurtState.Vulnerable;
         Debug.Log($"[TestRunner] Time={player.StateMachine.CurrentState.ElapsedTime:F2}s, NormalizedTime={player.StateMachine.CurrentState.NormalizedTime:F2}: HurtState={hurtStateBefore}");
         if (hurtStateBefore != HurtState.Invincible)
         {
-            Debug.LogError($"[TestRunner] FAILED: HurtState during Attack2 initial window is not Invincible! Found: {hurtStateBefore}");
+            Debug.LogError($"[TestRunner] FAILED: HurtState during HeavySlash1 initial window is not Invincible! Found: {hurtStateBefore}");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -137,16 +137,16 @@ public class CombatSystemTestRunner : MonoBehaviour
             yield break;
         }
 
-        // Scenario 8: Wait for Attack2 to complete and verify it returns to Idle
-        Debug.Log("[TestRunner] Waiting for Attack2 to complete...");
-        while (player.StateMachine.CurrentState.Move.moveName == "Attack2")
+        // Scenario 8: Wait for HeavySlash1 to complete and verify it returns to Idle
+        Debug.Log("[TestRunner] Waiting for HeavySlash1 to complete...");
+        while (player.StateMachine.CurrentState.Move.moveName == "HeavySlash1")
         {
             yield return null;
         }
-        Debug.Log($"[TestRunner] Post-Attack2: Move={player.StateMachine.CurrentState.Move.moveName}");
+        Debug.Log($"[TestRunner] Post-HeavySlash1: Move={player.StateMachine.CurrentState.Move.moveName}");
         if (player.StateMachine.CurrentState.Move.moveName != "Idle")
         {
-            Debug.LogError("[TestRunner] FAILED: Did not return to Idle after Attack2 completed!");
+            Debug.LogError("[TestRunner] FAILED: Did not return to Idle after HeavySlash1 completed!");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else

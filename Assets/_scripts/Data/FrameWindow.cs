@@ -14,6 +14,7 @@ Role defines:
 [Serializable]
 public class FrameWindow
 {
+    public FrameWindowType windowType;
     [Tooltip("0-1 normalized time")]
     public float start;
     [Tooltip("0-1 normalized time")]

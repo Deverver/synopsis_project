@@ -24,6 +24,19 @@ public class CombatResolver : MonoBehaviour
         {
             Debug.Log($"[CombatResolver] RESOLVE: Hitbox on '{hitbox.gameObject.name}' -> Hurtbox on '{hurtbox.gameObject.name}' (HurtState: {state}) => HIT CONFIRMED");
             hurtbox.ReceiveHit(hitbox);
+            
+            // Try to find an Enemy component to enter hitstun
+            Enemy enemy = hurtbox.GetComponent<Enemy>();
+            if (enemy == null) enemy = hurtbox.GetComponentInParent<Enemy>();
+            
+            if (enemy != null)
+            {
+                enemy.EnterHitstun(0.5f); // 0.5 seconds hitstun
+            }
+
+            // Simple hit feedback
+            Debug.Log("<color=red><b>HIT CONFIRMED!</b></color> (Placeholder for Hitstop/Particles)");
+            
             return HitResults.Hit;
         }
         else if (state == HurtState.Invincible)

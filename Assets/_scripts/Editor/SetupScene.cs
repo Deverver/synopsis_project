@@ -30,17 +30,17 @@ public static class SetupScene
             Undo.RegisterCreatedObjectUndo(resolverObj, "Create CombatResolver");
         }
 
-        // 2. Create or Find CombatDebugger
+        // 2. Create or Find CombatFeedbackUI
 #if UNITY_2023_1_OR_NEWER
-        CombatDebugger debugger = Object.FindFirstObjectByType<CombatDebugger>();
+        CombatFeedbackUI ui = Object.FindFirstObjectByType<CombatFeedbackUI>();
 #else
-        CombatDebugger debugger = Object.FindObjectOfType<CombatDebugger>();
+        CombatFeedbackUI ui = Object.FindObjectOfType<CombatFeedbackUI>();
 #endif
-        if (debugger == null)
+        if (ui == null)
         {
-            GameObject debuggerObj = new GameObject("CombatDebugger");
-            debugger = debuggerObj.AddComponent<CombatDebugger>();
-            Undo.RegisterCreatedObjectUndo(debuggerObj, "Create CombatDebugger");
+            GameObject uiObj = new GameObject("CombatFeedbackUI");
+            ui = uiObj.AddComponent<CombatFeedbackUI>();
+            Undo.RegisterCreatedObjectUndo(uiObj, "Create CombatFeedbackUI");
         }
 
         // 3. Create Player GameObject
@@ -61,10 +61,16 @@ public static class SetupScene
 
             player = playerObj.AddComponent<PlayerController>();
 
-            // Create Hitbox child
+            // Create DummyWeapon child
+            GameObject weaponObj = new GameObject("DummyWeapon");
+            weaponObj.transform.SetParent(playerObj.transform);
+            weaponObj.transform.localPosition = new Vector3(0.5f, 1f, 0f); // Offset to the side like a hand
+            Weapon weaponComponent = weaponObj.AddComponent<Weapon>();
+
+            // Create Hitbox child (now a child of the Weapon!)
             GameObject hitboxObj = new GameObject("Hitbox");
-            hitboxObj.transform.SetParent(playerObj.transform);
-            hitboxObj.transform.localPosition = new Vector3(0f, 1f, 0.5f); // Centered at chest height, slightly forward
+            hitboxObj.transform.SetParent(weaponObj.transform);
+            hitboxObj.transform.localPosition = new Vector3(0f, 0f, 0.5f); // Pointing forward from the weapon
             
             BoxCollider hitboxCollider = hitboxObj.AddComponent<BoxCollider>();
             hitboxCollider.isTrigger = true;
@@ -85,16 +91,13 @@ public static class SetupScene
 
             // Load move asset
             MoveData idleMove = AssetDatabase.LoadAssetAtPath<MoveData>("Assets/_moves/Idle.asset");
-            
+
             // Assign fields via SerializedObject to maintain serialization
             SerializedObject serializedPlayer = new SerializedObject(player);
             serializedPlayer.FindProperty("idleMove").objectReferenceValue = idleMove;
-            serializedPlayer.FindProperty("hitbox").objectReferenceValue = hitboxComponent;
+            serializedPlayer.FindProperty("equippedWeapon").objectReferenceValue = weaponComponent;
             serializedPlayer.FindProperty("hurtbox").objectReferenceValue = hurtboxComponent;
             serializedPlayer.ApplyModifiedProperties();
-
-            // Set up Weapon component for testing
-            Weapon weaponComponent = playerObj.AddComponent<Weapon>();
 
             Undo.RegisterCreatedObjectUndo(playerObj, "Create Player");
             Debug.Log("[SetupScene] Player created successfully.");
@@ -118,15 +121,27 @@ public static class SetupScene
 
             enemy = enemyObj.AddComponent<Enemy>();
 
-            // Enemy component expects Hurtbox to be on the same GameObject as per Enemy.Awake()
-            BoxCollider enemyCollider = enemyObj.AddComponent<BoxCollider>();
+            // Create a child Hurtbox to act as a "hitzone"
+            GameObject enemyHurtboxObj = new GameObject("BodyHitzone");
+            enemyHurtboxObj.transform.SetParent(enemyObj.transform);
+            enemyHurtboxObj.transform.localPosition = new Vector3(0f, 1f, 0f);
+
+            BoxCollider enemyCollider = enemyHurtboxObj.AddComponent<BoxCollider>();
             enemyCollider.isTrigger = true;
             enemyCollider.size = new Vector3(1f, 2f, 1f);
 
-            Hurtbox enemyHurtbox = enemyObj.AddComponent<Hurtbox>();
+            Hurtbox enemyHurtbox = enemyHurtboxObj.AddComponent<Hurtbox>();
 
             Undo.RegisterCreatedObjectUndo(enemyObj, "Create EnemyDummy");
             Debug.Log("[SetupScene] EnemyDummy created successfully.");
+        }
+
+        // Link references for UI
+        if (ui != null)
+        {
+            ui.player = player;
+            ui.enemy = enemy;
+            EditorUtility.SetDirty(ui);
         }
 
         Scene activeScene = EditorSceneManager.GetActiveScene();

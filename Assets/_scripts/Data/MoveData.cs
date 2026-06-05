@@ -4,6 +4,7 @@ using UnityEngine;
 public class MoveData : ScriptableObject
 {
     public string moveName;
+    public MoveType moveType;
     public float duration;
     public FrameWindow[] frameWindows;
     public Transition[] transitions;

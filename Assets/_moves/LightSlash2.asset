@@ -10,28 +10,34 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d61f281990591f4479ef433161009bf8, type: 3}
-  m_Name: Idle
-  m_EditorClassIdentifier: 
-  moveName: Idle
-  moveType: 0
-  duration: 1
+  m_Name: LightSlash2
+  m_EditorClassIdentifier: Assembly-CSharp::MoveData
+  moveName: LightSlash2
+  moveType: 2
+  duration: 0.8
   frameWindows:
   - windowType: 0
     start: 0
-    end: 1
+    end: 0.2
+    hurtState: 0
+    hitboxActive: 0
+  - windowType: 1
+    start: 0.21
+    end: 0.4
+    hurtState: 0
+    hitboxActive: 1
+  - windowType: 2
+    start: 0.41
+    end: 0.8
     hurtState: 0
     hitboxActive: 0
   transitions:
-  - requiredInput: 3
-    windowStart: 0
-    windowEnd: 1
-    nextMove: {fileID: 11400000, guid: b2473a1d6ebe757408ffc9caf50be673, type: 2}
   - requiredInput: 2
-    windowStart: 0
-    windowEnd: 1
+    windowStart: 0.41
+    windowEnd: 0.8
     nextMove: {fileID: 11400000, guid: b51dbf072d9bd2844bbc3a7f58eb208f, type: 2}
   - requiredInput: 1
-    windowStart: 0
-    windowEnd: 1
-    nextMove: {fileID: 11400000, guid: abe8831bd2be1d84a8fb4b0a33c808f9, type: 2}
+    windowStart: 0.41
+    windowEnd: 0.8
+    nextMove: {fileID: 11400000, guid: 7f56422c641c7c940a16e622bb9622c9, type: 2}
   animation: {fileID: 0}
