@@ -88,23 +88,77 @@ public static class SetupScene
             // ── Combat components (unchanged from original) ────────────────
             player = playerObj.AddComponent<PlayerController>();
 
-            // ── Placeholder body mesh (blue capsule) ───────────────────────
-            // This is a visual stand-in. Replace with your real character model later.
-            // The Animator on this child is what PlayerController drives.
-            GameObject playerMesh = CreatePlaceholderMesh(
-                "PlayerModel", PrimitiveType.Capsule, playerObj.transform,
-                new Vector3(0f, 1f, 0f), Vector3.one,
-                new Color(0.2f, 0.45f, 0.85f)); // blue
+            // ── Player body mesh (Y Bot or placeholder) ───────────────────────
+            GameObject yBotAsset = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_animations/Y Bot.fbx");
+            GameObject playerMesh;
+            Animator playerAnimator;
 
-            // Add Animator to the placeholder body and wire it into PlayerController
-            Animator playerAnimator = playerMesh.AddComponent<Animator>();
+            if (yBotAsset != null)
+            {
+                playerMesh = (GameObject)PrefabUtility.InstantiatePrefab(yBotAsset);
+                playerMesh.name = "PlayerModel";
+                playerMesh.transform.SetParent(playerObj.transform);
+                playerMesh.transform.localPosition = Vector3.zero;
+                playerMesh.transform.localRotation = Quaternion.identity;
+                
+                playerAnimator = playerMesh.GetComponent<Animator>();
+                if (playerAnimator == null) 
+                    playerAnimator = playerMesh.AddComponent<Animator>();
+                
+                RuntimeAnimatorController controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/_animations/PlayerAnimator.controller");
+                if (controller != null)
+                {
+                    playerAnimator.runtimeAnimatorController = controller;
+                }
+            }
+            else
+            {
+                playerMesh = CreatePlaceholderMesh(
+                    "PlayerModel", PrimitiveType.Capsule, playerObj.transform,
+                    new Vector3(0f, 1f, 0f), Vector3.one,
+                    new Color(0.2f, 0.45f, 0.85f)); // blue
+
+                playerAnimator = playerMesh.AddComponent<Animator>();
+            }
+
+            // Wire Animator into PlayerController
             SerializedObject serializedPlayer0 = new SerializedObject(player);
             serializedPlayer0.FindProperty("animator").objectReferenceValue = playerAnimator;
             serializedPlayer0.ApplyModifiedProperties();
 
             GameObject weaponObj = new GameObject("DummyWeapon");
-            weaponObj.transform.SetParent(playerObj.transform);
-            weaponObj.transform.localPosition = new Vector3(0.5f, 1f, 0f);
+            Transform rightHand = null;
+
+            if (playerAnimator != null && playerAnimator.isHuman)
+            {
+                rightHand = playerAnimator.GetBoneTransform(HumanBodyBones.RightHand);
+            }
+
+            if (rightHand == null && playerMesh != null)
+            {
+                Transform[] bones = playerMesh.GetComponentsInChildren<Transform>();
+                foreach (Transform bone in bones)
+                {
+                    if (bone.name.Contains("RightHand") && !bone.name.Contains("Index") && !bone.name.Contains("Thumb") && !bone.name.Contains("Pinky") && !bone.name.Contains("Ring") && !bone.name.Contains("Middle"))
+                    {
+                        rightHand = bone;
+                        break;
+                    }
+                }
+            }
+
+            if (rightHand != null)
+            {
+                weaponObj.transform.SetParent(rightHand);
+                weaponObj.transform.localPosition = Vector3.zero;
+                weaponObj.transform.localRotation = Quaternion.identity;
+            }
+            else
+            {
+                weaponObj.transform.SetParent(playerObj.transform);
+                weaponObj.transform.localPosition = new Vector3(0.5f, 1f, 0f);
+            }
+
             Weapon weaponComponent = weaponObj.AddComponent<Weapon>();
 
             // ── Placeholder weapon mesh (grey cylinder) ────────────────────

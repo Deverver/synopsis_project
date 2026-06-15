@@ -21,7 +21,7 @@ public class LockOnController : MonoBehaviour
     [Header("Targets")]
     [SerializeField] private Transform enemyCameraTarget;
 
-    [Header("Priorities")]  // kept for potential future use
+    [Header("Priorities")]  // was used with CineMachine, kept it for potential future use
     private int priorityActive   = 20;
     private int priorityInactive = 0;
 

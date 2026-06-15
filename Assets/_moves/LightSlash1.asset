@@ -44,4 +44,4 @@ MonoBehaviour:
     windowStart: 0.41
     windowEnd: 0.8
     nextMove: {fileID: 11400000, guid: 4425c724138da0a40a1ab4bc82796c13, type: 2}
-  animation: {fileID: 0}
+  animation: {fileID: -203655887218126122, guid: 6ceb90408ec3ce54eafc7921e7b3b2b6, type: 3}

@@ -32,4 +32,4 @@ MonoBehaviour:
     hurtState: 0
     hitboxActive: 0
   transitions: []
-  animation: {fileID: 0}
+  animation: {fileID: -203655887218126122, guid: bb22721cd3899c24b9025b3b104582d4, type: 3}
